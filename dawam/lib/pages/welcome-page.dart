@@ -8,29 +8,28 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFFFDF3),
+      backgroundColor: const Color(0xFFFFFDF3),
       body: GestureDetector(
-        behavior: HitTestBehavior.opaque, // lets taps register anywhere on screen
+        behavior: HitTestBehavior.opaque,
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const HomePage()), // Make sure HomePage is imported
+            MaterialPageRoute(builder: (context) => const HomePage()),
           );
         },
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 "Dawam",
                 style: GoogleFonts.reemKufi(
-                  color: Color(0xFFFFD700),
+                  color: const Color(0xFFFFD700),
                   fontSize: 60,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              Text(
+              const Text(
                 "Consistency with Intention",
                 style: TextStyle(
                   fontSize: 18,
@@ -39,8 +38,8 @@ class WelcomePage extends StatelessWidget {
                   letterSpacing: 1.0,
                 ),
               ),
-              SizedBox(height: 35),
-              Text(
+              const SizedBox(height: 35),
+              const Text(
                 "Tap Anywhere To Start",
                 style: TextStyle(
                   fontSize: 12,
