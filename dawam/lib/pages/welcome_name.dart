@@ -1,9 +1,23 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'welcome-appIntro.dart';
 
-class WelcomeName extends StatelessWidget {
+class WelcomeName extends StatefulWidget {
   const WelcomeName({super.key});
+
+  @override
+  State<WelcomeName> createState() => _WelcomeNameState();
+}
+
+class _WelcomeNameState extends State<WelcomeName> {
+  final TextEditingController _nameController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +46,7 @@ class WelcomeName extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 8, left: 40, right: 40),
               child: TextField(
+                controller: _nameController,
                 cursorColor: Color(0xFFFFD700),
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
@@ -54,6 +69,21 @@ class WelcomeName extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                String enteredName = _nameController.text.trim();
+                if (enteredName.isNotEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          WelcomeMessage(userName: enteredName),
+                    ),
+                  );
+                }
+              },
+              child: Text('Next'),
             ),
 
           ],
