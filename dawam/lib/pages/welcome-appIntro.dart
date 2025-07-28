@@ -1,3 +1,4 @@
+import 'package:dawam/pages/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,7 +10,6 @@ class WelcomeMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 60),
         child: Column(
@@ -57,8 +57,9 @@ class WelcomeMessage extends StatelessWidget {
                 ),
               ),
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Start button tapped!')),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => HomePage(userName: userName)),
                 );
               },
               child: Text(

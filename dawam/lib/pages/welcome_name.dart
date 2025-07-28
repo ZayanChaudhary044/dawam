@@ -70,7 +70,15 @@ class _WelcomeNameState extends State<WelcomeName> {
                 ),
               ),
             ),
+            SizedBox(height: 40),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFFFD700),
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
               onPressed: () {
                 String enteredName = _nameController.text.trim();
                 if (enteredName.isNotEmpty) {
@@ -83,9 +91,12 @@ class _WelcomeNameState extends State<WelcomeName> {
                   );
                 }
               },
-              child: Text('Next'),
+              child: Text('Next',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),),
             ),
-
           ],
         ),
       ),
