@@ -8,15 +8,20 @@ class HomePage extends StatelessWidget {
 
   final String userName;
 
+  // Use MaterialColor so you can do textColor[900]
+  final MaterialColor textColor = Colors.brown;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          SizedBox(height: 60),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
+      backgroundColor: Colors.brown[50],  // subtle off-white brownish bg
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 60),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Row
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
@@ -24,119 +29,127 @@ class HomePage extends StatelessWidget {
                   style: GoogleFonts.reemKufi(
                     fontSize: 25,
                     fontWeight: FontWeight.w900,
+                    color: textColor[900],
                   ),
                 ),
-                Icon(Icons.account_circle_outlined, size: 50),
+                Icon(Icons.account_circle_outlined, size: 50, color: textColor[700]),
               ],
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  elevation: 2,
-                  shadowColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  "Custom Sets",
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  elevation: 2,
-                  shadowColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  "Tasbeeh Sets",
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 7),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              elevation: 0,
-              padding: EdgeInsets.symmetric(horizontal: 60, vertical: 50),
-              shadowColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Column(
+
+            const SizedBox(height: 20),
+
+            // Buttons Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Text(
-                  "The Pavilion",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.reemKufi(
-                    fontSize: 40,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black,
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    elevation: 2,
+                    shadowColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    backgroundColor: Colors.brown[100],
+                  ),
+                  child: Text(
+                    "Custom Sets",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: textColor[900],
+                    ),
                   ),
                 ),
-                Text(
-                  "Gain Reward For Every Tap",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black,
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    elevation: 2,
+                    shadowColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    backgroundColor: Colors.brown[100],
+                  ),
+                  child: Text(
+                    "Tasbeeh Sets",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: textColor[900],
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          SizedBox(height: 5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Column(
+
+            const SizedBox(height: 15),
+
+            // Pavilion Button
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 50),
+                shadowColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                backgroundColor: Colors.brown[100],
+              ),
+              child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(0.0),
-                    child: Text(
+                  Text(
+                    "The Pavilion",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.reemKufi(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w900,
+                      color: textColor[900],
+                    ),
+                  ),
+                  Text(
+                    "Gain Reward For Every Tap",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: textColor[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Progress + Stats Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  children: [
+                    Text(
                       "100 Day Hard",
                       style: GoogleFonts.reemKufi(
                         fontSize: 25,
                         fontWeight: FontWeight.w700,
+                        color: textColor[900],
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 5),
-                    child: CircularProgressWidget(progress: 0),
-                  ),
-                ],
-              ),
-              StatsTable()
-            ],
-          ),
+                    const SizedBox(height: 10),
+                    CircularProgressWidget(progress: 0),
+                  ],
+                ),
 
-        ],
+                // Your stats widget imported
+                StatsTable(),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
-//next session points
-//use card instead of container for prayer timetable
