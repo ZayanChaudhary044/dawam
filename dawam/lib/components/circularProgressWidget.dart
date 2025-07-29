@@ -63,7 +63,7 @@ class _CircularProgressWidgetState extends State<CircularProgressWidget>
             children: [
               Text(
                 "$currentDay/100",
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
