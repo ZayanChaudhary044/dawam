@@ -1,4 +1,5 @@
 import 'package:dawam/components/prayer-timetable.dart';
+import 'package:dawam/pages/pavilion.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dawam/components/circularProgressWidget.dart';
@@ -89,7 +90,10 @@ class HomePage extends StatelessWidget {
               // Pavilion Button
               Center(
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ThePavilion()),
+                  );},
                   style: ElevatedButton.styleFrom(
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 50),
