@@ -30,6 +30,7 @@ class StatsTable extends StatelessWidget {
           SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 "Today",
@@ -39,8 +40,9 @@ class StatsTable extends StatelessWidget {
                   color: Colors.brown[800],
                 ),
               ),
+              SizedBox(width: 15),
               Text(
-                "0",
+                "234",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -54,15 +56,16 @@ class StatsTable extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "This Week",
+                "Week",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.brown[800],
                 ),
               ),
+              SizedBox(width: 15),
               Text(
-                "3",
+                "0",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -83,8 +86,9 @@ class StatsTable extends StatelessWidget {
                   color: Colors.brown[800],
                 ),
               ),
+              SizedBox(width: 15),
               Text(
-                "24",
+                "0",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
