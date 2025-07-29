@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dawam/components/circularProgressWidget.dart';
-import 'package:dawam/components/prayer-timetable.dart';
+import 'package:dawam/components/stats-table.dart';
 
 class HomePage extends StatelessWidget {
   HomePage({super.key, required this.userName});
@@ -36,8 +36,7 @@ class HomePage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  elevation: 0,
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 10),
+                  elevation: 2,
                   shadowColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -45,9 +44,9 @@ class HomePage extends StatelessWidget {
                 ),
                 child: Text(
                   "Custom Sets",
-                  style: GoogleFonts.reemKufi(
+                  style: TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: Colors.black,
                   ),
                 ),
@@ -55,8 +54,7 @@ class HomePage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  elevation: 0,
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 10),
+                  elevation: 2,
                   shadowColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -64,9 +62,9 @@ class HomePage extends StatelessWidget {
                 ),
                 child: Text(
                   "Tasbeeh Sets",
-                  style: GoogleFonts.reemKufi(
+                  style: TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: Colors.black,
                   ),
                 ),
@@ -109,47 +107,28 @@ class HomePage extends StatelessWidget {
           ),
           SizedBox(height: 5),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(0.0),
                     child: Text(
                       "100 Day Hard",
                       style: GoogleFonts.reemKufi(
                         fontSize: 25,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 5),
-                    child: CircularProgressWidget(progress: 100),
+                    child: CircularProgressWidget(progress: 0),
                   ),
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(horizontal:40, vertical: 65),
-                    shadowColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    "My Stats",
-                    style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ),
+              StatsTable()
             ],
           ),
 
