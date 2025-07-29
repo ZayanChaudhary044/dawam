@@ -148,7 +148,7 @@ class HomePage extends StatelessWidget {
                   StatsTable(),
                 ],
               ),
-              SizedBox(height: 7),
+              SizedBox(height: 3),
               PrayerTimetable()
             ],
           ),
