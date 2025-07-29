@@ -31,10 +31,10 @@ class WelcomeMessage extends StatelessWidget {
             ),
             SizedBox(height: 30),
             Text(
-              "We're so glad you're here. Dawam is your spiritual companion, helping you stay consistent with your daily prayers, habits, and personal growth in deen.",
+              "We built Dawam to help Muslims cultivate consistency and intentionality in their spiritual and personal growth. The name “Dawam” (دَوَام) reflects our vision — a lasting commitment to daily habits that nourish the soul. In Arabic, dawam means continuity, endurance, and constancy — values at the heart of our faith and this app. Whether it's prayer, reflection, or self-improvement, Dawam is here to support a path that endures.",
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 color: Color(0xFF7E6E65),
               ),
             ),
@@ -43,7 +43,7 @@ class WelcomeMessage extends StatelessWidget {
               "Set goals, track progress, and build strong habits — all in one place.",
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 color: Color(0xFF7E6E65),
               ),
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:dawam/components/circularProgressWidget.dart';
 
 class HomePage extends StatelessWidget {
   HomePage({super.key, required this.userName});
@@ -34,6 +35,7 @@ class HomePage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
+                  elevation: 0,
                   padding: EdgeInsets.symmetric(horizontal: 50, vertical: 10),
                   shadowColor: Colors.white,
                   shape: RoundedRectangleBorder(
@@ -52,6 +54,7 @@ class HomePage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
+                  elevation: 0,
                   padding: EdgeInsets.symmetric(horizontal: 50, vertical: 10),
                   shadowColor: Colors.white,
                   shape: RoundedRectangleBorder(
@@ -73,6 +76,7 @@ class HomePage extends StatelessWidget {
           ElevatedButton(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
+              elevation: 0,
               padding: EdgeInsets.symmetric(horizontal: 60, vertical: 50),
               shadowColor: Colors.white,
               shape: RoundedRectangleBorder(
@@ -105,9 +109,27 @@ class HomePage extends StatelessWidget {
           SizedBox(height: 7),
           Row(
             children: [
+              Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      "100 Day Hard",
+                      style: GoogleFonts.reemKufi(
+                        fontSize: 25,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: CircularProgressWidget(progress: 100),
+                  ),
+                ],
+              ),
 
             ],
-          )
+          ),
         ],
       ),
     );
