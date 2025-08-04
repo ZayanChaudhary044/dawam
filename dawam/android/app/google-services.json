@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "712712333640",
+    "project_id": "dawam-f1ebe",
+    "storage_bucket": "dawam-f1ebe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:712712333640:android:3ac68ada4380eb7602ab7d",
+        "android_client_info": {
+          "package_name": "com.example.dawam"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYP81LN1UphVcLhOZ4w3A-9oIxAoqapq0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

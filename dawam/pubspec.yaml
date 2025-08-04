@@ -39,6 +39,8 @@ dependencies:
   animated_text_kit: ^4.2.3
   intl: ^0.20.2
   http: ^1.4.0
+  firebase_auth: ^6.0.0
+  firebase_core: ^4.0.0
 
 dev_dependencies:
   flutter_test:
