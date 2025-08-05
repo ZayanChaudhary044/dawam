@@ -1,22 +1,323 @@
 import 'package:dawam/components/prayer-timetable.dart';
 import 'package:dawam/pages/pavilion.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dawam/components/circularProgressWidget.dart';
 import 'package:dawam/components/stats-table.dart';
+import 'package:audioplayers/audioplayers.dart';
 
-class HomePage extends StatelessWidget {
+// Sound Manager Class (same as before)
+class SoundManager {
+  static AudioPlayer? _player;
+
+  static Future<void> initializePlayer() async {
+    _player ??= AudioPlayer();
+    await _player!.setReleaseMode(ReleaseMode.release);
+  }
+
+  static Future<void> playButtonSound() async {
+    try {
+      await initializePlayer();
+
+      if (_player != null) {
+        await _player!.setVolume(1.0);
+        await _player!.play(AssetSource('sounds/button-switch.mp3'));
+      }
+
+    } catch (e) {
+      try {
+        await SystemSound.play(SystemSoundType.click);
+      } catch (fallbackError) {
+        await HapticFeedback.lightImpact();
+      }
+    }
+  }
+
+  static void dispose() {
+    _player?.dispose();
+    _player = null;
+  }
+}
+
+// Animated Button Widget (same as before)
+class AnimatedButton extends StatefulWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final Color backgroundColor;
+  final Color textColor;
+  final EdgeInsets padding;
+  final BorderRadius borderRadius;
+  final double fontSize;
+  final FontWeight fontWeight;
+  final TextStyle? textStyle;
+
+  const AnimatedButton({
+    super.key,
+    required this.text,
+    this.onPressed,
+    this.backgroundColor = const Color(0xFFFFD700),
+    this.textColor = Colors.black,
+    this.padding = const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+    this.borderRadius = const BorderRadius.all(Radius.circular(18)),
+    this.fontSize = 16,
+    this.fontWeight = FontWeight.bold,
+    this.textStyle,
+  });
+
+  @override
+  State<AnimatedButton> createState() => _AnimatedButtonState();
+}
+
+class _AnimatedButtonState extends State<AnimatedButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    setState(() {
+      _isPressed = true;
+    });
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    setState(() {
+      _isPressed = false;
+    });
+    _controller.reverse();
+  }
+
+  void _onTapCancel() {
+    setState(() {
+      _isPressed = false;
+    });
+    _controller.reverse();
+  }
+
+  void _onTap() {
+    // Play sound (don't await it)
+    SoundManager.playButtonSound();
+
+    // Execute callback immediately
+    if (widget.onPressed != null) {
+      widget.onPressed!();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      onTap: _onTap,
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              padding: widget.padding,
+              decoration: BoxDecoration(
+                color: widget.backgroundColor,
+                borderRadius: widget.borderRadius,
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.backgroundColor.withOpacity(0.3),
+                    blurRadius: _isPressed ? 4 : 8,
+                    offset: Offset(0, _isPressed ? 2 : 4),
+                  ),
+                ],
+              ),
+              child: widget.textStyle != null
+                  ? Text(widget.text, style: widget.textStyle)
+                  : Text(
+                widget.text,
+                style: TextStyle(
+                  color: widget.textColor,
+                  fontWeight: widget.fontWeight,
+                  fontSize: widget.fontSize,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// Large Animated Button for special buttons like Pavilion
+class LargeAnimatedButton extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onPressed;
+  final Color backgroundColor;
+  final EdgeInsets padding;
+  final BorderRadius borderRadius;
+
+  const LargeAnimatedButton({
+    super.key,
+    required this.child,
+    this.onPressed,
+    this.backgroundColor = Colors.brown,
+    this.padding = const EdgeInsets.symmetric(horizontal: 60, vertical: 50),
+    this.borderRadius = const BorderRadius.all(Radius.circular(12)),
+  });
+
+  @override
+  State<LargeAnimatedButton> createState() => _LargeAnimatedButtonState();
+}
+
+class _LargeAnimatedButtonState extends State<LargeAnimatedButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 120),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    setState(() {
+      _isPressed = true;
+    });
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    setState(() {
+      _isPressed = false;
+    });
+    _controller.reverse();
+  }
+
+  void _onTapCancel() {
+    setState(() {
+      _isPressed = false;
+    });
+    _controller.reverse();
+  }
+
+  void _onTap() {
+    // Play sound
+    SoundManager.playButtonSound();
+
+    // Execute callback
+    if (widget.onPressed != null) {
+      widget.onPressed!();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      onTap: _onTap,
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              padding: widget.padding,
+              decoration: BoxDecoration(
+                color: widget.backgroundColor,
+                borderRadius: widget.borderRadius,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: _isPressed ? 4 : 8,
+                    offset: Offset(0, _isPressed ? 2 : 4),
+                  ),
+                ],
+              ),
+              child: widget.child,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
   HomePage({super.key, required this.userName});
 
   final String userName;
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   // Use MaterialColor so you can do textColor[900]
   final MaterialColor textColor = Colors.brown;
 
   @override
+  void initState() {
+    super.initState();
+    // Initialize sound player
+    SoundManager.initializePlayer();
+  }
+
+  @override
+  void dispose() {
+    SoundManager.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 60),
         child: SingleChildScrollView(
@@ -29,7 +330,7 @@ class HomePage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "$userName's Dashboard",
+                    "${widget.userName}'s Dashboard",
                     style: GoogleFonts.reemKufi(
                       fontSize: 25,
                       fontWeight: FontWeight.w900,
@@ -39,70 +340,56 @@ class HomePage extends StatelessWidget {
                   Icon(Icons.account_circle_outlined, size: 50, color: textColor[700]),
                 ],
               ),
-          
+
               const SizedBox(height: 20),
-          
-              // Buttons Row
+
+              // Animated Buttons Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      shadowColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      backgroundColor: Colors.brown[100],
-                    ),
-                    child: Text(
-                      "Custom Sets",
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: textColor[900],
-                      ),
-                    ),
+                  AnimatedButton(
+                    text: "Custom Sets",
+                    backgroundColor: Colors.brown[100]!,
+                    textColor: textColor[900]!,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    borderRadius: BorderRadius.circular(12),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    onPressed: () {
+                      print('Custom Sets tapped!');
+                      // Add your navigation or functionality here
+                    },
                   ),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      shadowColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      backgroundColor: Colors.brown[100],
-                    ),
-                    child: Text(
-                      "Tasbeeh Sets",
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: textColor[900],
-                      ),
-                    ),
+                  AnimatedButton(
+                    text: "Tasbeeh Sets",
+                    backgroundColor: Colors.brown[100]!,
+                    textColor: textColor[900]!,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    borderRadius: BorderRadius.circular(12),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    onPressed: () {
+                      print('Tasbeeh Sets tapped!');
+                      // Add your navigation or functionality here
+                    },
                   ),
                 ],
               ),
-          
+
               const SizedBox(height: 12),
-          
-              // Pavilion Button
+
+              // Animated Pavilion Button
               Center(
-                child: ElevatedButton(
-                  onPressed: () {Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ThePavilion()),
-                  );},
-                  style: ElevatedButton.styleFrom(
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 50),
-                    shadowColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    backgroundColor: Colors.brown[100],
-                  ),
+                child: LargeAnimatedButton(
+                  backgroundColor: Colors.brown[100]!,
+                  borderRadius: BorderRadius.circular(12),
+                  onPressed: () {
+                    print('The Pavilion tapped!');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ThePavilion()),
+                    );
+                  },
                   child: Column(
                     children: [
                       Text(
@@ -127,9 +414,9 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
               ),
-          
+
               const SizedBox(height: 12),
-          
+
               // Progress + Stats Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
