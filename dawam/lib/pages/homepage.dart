@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:dawam/components/circularProgressWidget.dart';
 import 'package:dawam/components/stats-table.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:dawam/pages/account.dart';
 
 // Sound Manager Class (same as before)
 class SoundManager {
@@ -24,7 +25,23 @@ class SoundManager {
         await _player!.setVolume(1.0);
         await _player!.play(AssetSource('sounds/button-switch.mp3'));
       }
+    } catch (e) {
+      try {
+        await SystemSound.play(SystemSoundType.click);
+      } catch (fallbackError) {
+        await HapticFeedback.lightImpact();
+      }
+    }
+  }
 
+  static Future<void> playAccountSound() async {
+    try {
+      await initializePlayer();
+
+      if (_player != null) {
+        await _player!.setVolume(1.0);
+        await _player!.play(AssetSource('sounds/account-switch.mp3'));
+      }
     } catch (e) {
       try {
         await SystemSound.play(SystemSoundType.click);
@@ -87,10 +104,7 @@ class _AnimatedButtonState extends State<AnimatedButton>
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -158,13 +172,13 @@ class _AnimatedButtonState extends State<AnimatedButton>
               child: widget.textStyle != null
                   ? Text(widget.text, style: widget.textStyle)
                   : Text(
-                widget.text,
-                style: TextStyle(
-                  color: widget.textColor,
-                  fontWeight: widget.fontWeight,
-                  fontSize: widget.fontSize,
-                ),
-              ),
+                      widget.text,
+                      style: TextStyle(
+                        color: widget.textColor,
+                        fontWeight: widget.fontWeight,
+                        fontSize: widget.fontSize,
+                      ),
+                    ),
             ),
           );
         },
@@ -212,10 +226,7 @@ class _LargeAnimatedButtonState extends State<LargeAnimatedButton>
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 0.96,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -337,7 +348,17 @@ class _HomePageState extends State<HomePage> {
                       color: textColor[900],
                     ),
                   ),
-                  Icon(Icons.account_circle_outlined, size: 50, color: textColor[700]),
+                  GestureDetector(
+                    child: Icon(
+                      Icons.account_circle_outlined,
+                      size: 50,
+                      color: textColor[700],
+                    ),
+                    onTap: () async{
+                      await SoundManager.playAccountSound();
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => AccountsPage(userName: widget.userName)));
+                    },
+                  ),
                 ],
               ),
 
@@ -354,7 +375,10 @@ class _HomePageState extends State<HomePage> {
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
                     borderRadius: BorderRadius.circular(12),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     onPressed: () {
                       print('Custom Sets tapped!');
                       // Add your navigation or functionality here
@@ -367,10 +391,12 @@ class _HomePageState extends State<HomePage> {
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
                     borderRadius: BorderRadius.circular(12),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     onPressed: () {
-                      print('Tasbeeh Sets tapped!');
-                      // Add your navigation or functionality here
+
                     },
                   ),
                 ],
@@ -384,10 +410,11 @@ class _HomePageState extends State<HomePage> {
                   backgroundColor: Colors.brown[100]!,
                   borderRadius: BorderRadius.circular(12),
                   onPressed: () {
-                    print('The Pavilion tapped!');
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const ThePavilion()),
+                      MaterialPageRoute(
+                        builder: (context) => const ThePavilion(),
+                      ),
                     );
                   },
                   child: Column(
@@ -415,7 +442,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 6),
 
               // Progress + Stats Row
               Row(
@@ -436,11 +463,12 @@ class _HomePageState extends State<HomePage> {
                       CircularProgressWidget(progress: 20),
                     ],
                   ),
+                  SizedBox(width: 10),
                   StatsTable(),
                 ],
               ),
               SizedBox(height: 3),
-              PrayerTimetable()
+              PrayerTimetable(),
             ],
           ),
         ),

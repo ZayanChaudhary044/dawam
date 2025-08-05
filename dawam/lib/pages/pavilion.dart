@@ -29,6 +29,23 @@ class SoundManager {
     }
   }
 
+  static Future<void> playAccountSound() async {
+    try {
+      await initializePlayer();
+
+      if (_player != null) {
+        await _player!.setVolume(1.0);
+        await _player!.play(AssetSource('sounds/account-switch.mp3'));
+      }
+    } catch (e) {
+      try {
+        await SystemSound.play(SystemSoundType.click);
+      } catch (fallbackError) {
+        await HapticFeedback.lightImpact();
+      }
+    }
+  }
+
   static void dispose() {
     _player?.dispose();
     _player = null;
@@ -90,7 +107,7 @@ class _AnimatedAddButtonState extends State<AnimatedAddButton>
       _isPressed = false;
     });
     _controller.reverse();
-    await SoundManager.playButtonSound();
+    await SoundManager.playAccountSound();
     if (widget.onPressed != null) {
       widget.onPressed!();
     }

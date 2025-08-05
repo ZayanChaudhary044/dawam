@@ -410,15 +410,8 @@ class _WelcomeNameState extends State<WelcomeName> {
             AnimatedButton(
               text: 'Next',
               onPressed: () {
-                print('📝 Next button callback executed');
                 String enteredName = _nameController.text.trim();
-                print('📝 Entered name: "$enteredName"');
-                if (enteredName.isNotEmpty) {
-                  print('📝 Name is not empty, navigating...');
                   fadeTo(context, WelcomeMessage(userName: enteredName));
-                } else {
-                  print('❌ Name is empty, not navigating');
-                }
               },
             ),
           ],

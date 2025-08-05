@@ -9,9 +9,9 @@ class StatsTable extends StatelessWidget {
       onPressed: () {},
       style: ElevatedButton.styleFrom(
         elevation: 2,
-        backgroundColor: Color(0xFFD2B48C),
+        backgroundColor: Colors.brown[100],
         padding: EdgeInsets.all(16),
-        shadowColor: Colors.white,
+        shadowColor: null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
