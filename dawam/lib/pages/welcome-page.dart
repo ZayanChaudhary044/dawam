@@ -1,3 +1,4 @@
+import 'package:dawam/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -409,9 +410,36 @@ class _WelcomeNameState extends State<WelcomeName> {
             const SizedBox(height: 40),
             AnimatedButton(
               text: 'Next',
-              onPressed: () {
+              onPressed: () async{
+                print('Next button pressed');
                 String enteredName = _nameController.text.trim();
+
+                if (enteredName.isEmpty) {
+                  print('Name is empty');
+                  return;
+                }
+
+                final user = supabase.auth.currentUser;
+                if (user == null) {
+                  print('No user signed in');
+                  return;
+                }
+
+                final response = await supabase
+                    .from('dawam')
+                    .upsert({
+                  'id': user.id,
+                  'name': enteredName,
+                })
+                    .select();
+
+                print('Upsert response: $response');
+
+                if (user == null) {
+                  print('No user signed in, navigating anyway for testing');
                   fadeTo(context, WelcomeMessage(userName: enteredName));
+                  return;
+                }
               },
             ),
           ],
