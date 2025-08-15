@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dawam/pages/homepage.dart';
 import 'package:audioplayers/audioplayers.dart';
-
+import 'package:shared_preferences/shared_preferences.dart'; // Add this import
 
 void fadeTo(BuildContext context, Widget page) {
   Navigator.of(context).push(
@@ -410,36 +410,25 @@ class _WelcomeNameState extends State<WelcomeName> {
             const SizedBox(height: 40),
             AnimatedButton(
               text: 'Next',
-              onPressed: () async{
+              onPressed: () async {
                 print('Next button pressed');
                 String enteredName = _nameController.text.trim();
 
                 if (enteredName.isEmpty) {
                   print('Name is empty');
+                  // Optionally show a snackbar or dialog to inform user
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter your name'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
                   return;
                 }
 
-                final user = supabase.auth.currentUser;
-                if (user == null) {
-                  print('No user signed in');
-                  return;
-                }
-
-                final response = await supabase
-                    .from('dawam')
-                    .upsert({
-                  'id': user.id,
-                  'name': enteredName,
-                })
-                    .select();
-
-                print('Upsert response: $response');
-
-                if (user == null) {
-                  print('No user signed in, navigating anyway for testing');
-                  fadeTo(context, WelcomeMessage(userName: enteredName));
-                  return;
-                }
+                // Navigate to the next page with the entered name
+                print('Navigating to WelcomeMessage with name: $enteredName');
+                fadeTo(context, WelcomeMessage(userName: enteredName));
               },
             ),
           ],
@@ -449,11 +438,19 @@ class _WelcomeNameState extends State<WelcomeName> {
   }
 }
 
-/// WelcomeMessage screen
+/// WelcomeMessage screen - UPDATED to save onboarding completion
 class WelcomeMessage extends StatelessWidget {
   final String userName;
 
   const WelcomeMessage({super.key, required this.userName});
+
+  // Method to save onboarding completion
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_completed_onboarding', true);
+    await prefs.setString('user_name', userName);
+    print('✅ Onboarding completed and saved for user: $userName');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -492,8 +489,19 @@ class WelcomeMessage extends StatelessWidget {
             const Spacer(),
             AnimatedButton(
               text: 'Get Started',
-              onPressed: () {
-                fadeTo(context, HomePage(userName: userName));
+              onPressed: () async {
+                print('🚀 Get Started button pressed');
+
+                // Save onboarding completion BEFORE navigating
+                await _completeOnboarding();
+
+                // Navigate to homepage using pushReplacement to prevent going back
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HomePage(userName: userName),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 20),
@@ -501,5 +509,25 @@ class WelcomeMessage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// Optional: Onboarding Manager for testing/debugging
+class OnboardingManager {
+  static Future<void> resetOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('has_completed_onboarding');
+    await prefs.remove('user_name');
+    print('🔄 Onboarding reset - user will see welcome flow again');
+  }
+
+  static Future<bool> hasCompletedOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('has_completed_onboarding') ?? false;
+  }
+
+  static Future<String?> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_name');
   }
 }

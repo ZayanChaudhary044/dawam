@@ -8,7 +8,25 @@ import 'package:dawam/components/stats-table.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:dawam/pages/account.dart';
 
-// Sound Manager Class (same as before)
+// iOS-inspired Color Scheme
+class AppColors {
+  static const primary = Color(0xFFD4AF37); // Elegant Gold
+  static const primaryLight = Color(0xFFF5E6A3);
+  static const secondary = Color(0xFF8B4513); // Saddle Brown
+  static const background = Color(0xFFFCFBF8); // Off-white
+  static const surface = Color(0xFFFFFFFF);
+  static const surfaceElevated = Color(0xFFF8F7F4);
+  static const onBackground = Color(0xFF1C1B1A);
+  static const onSurface = Color(0xFF2C2B28);
+  static const onSurfaceVariant = Color(0xFF8A8983);
+  static const accent = Color(0xFFA0785A); // Warm brown
+  static const accentLight = Color(0xFFE8DDD4);
+  static const divider = Color(0xFFEDE9E4);
+  static const shadow = Color(0x08000000);
+  static const shadowMedium = Color(0x12000000);
+}
+
+// Sound Manager Class
 class SoundManager {
   static AudioPlayer? _player;
 
@@ -20,7 +38,6 @@ class SoundManager {
   static Future<void> playButtonSound() async {
     try {
       await initializePlayer();
-
       if (_player != null) {
         await _player!.setVolume(1.0);
         await _player!.play(AssetSource('sounds/button-switch.mp3'));
@@ -37,7 +54,6 @@ class SoundManager {
   static Future<void> playAccountSound() async {
     try {
       await initializePlayer();
-
       if (_player != null) {
         await _player!.setVolume(1.0);
         await _player!.play(AssetSource('sounds/account-switch.mp3'));
@@ -57,37 +73,28 @@ class SoundManager {
   }
 }
 
-// Animated Button Widget (same as before)
-class AnimatedButton extends StatefulWidget {
+// iOS-style Button
+class iOSButton extends StatefulWidget {
   final String text;
   final VoidCallback? onPressed;
-  final Color backgroundColor;
-  final Color textColor;
-  final EdgeInsets padding;
-  final BorderRadius borderRadius;
-  final double fontSize;
-  final FontWeight fontWeight;
-  final TextStyle? textStyle;
+  final bool isPrimary;
+  final bool isCompact;
+  final IconData? icon;
 
-  const AnimatedButton({
+  const iOSButton({
     super.key,
     required this.text,
     this.onPressed,
-    this.backgroundColor = const Color(0xFFFFD700),
-    this.textColor = Colors.black,
-    this.padding = const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-    this.borderRadius = const BorderRadius.all(Radius.circular(18)),
-    this.fontSize = 16,
-    this.fontWeight = FontWeight.bold,
-    this.textStyle,
+    this.isPrimary = false,
+    this.isCompact = false,
+    this.icon,
   });
 
   @override
-  State<AnimatedButton> createState() => _AnimatedButtonState();
+  State<iOSButton> createState() => _iOSButtonState();
 }
 
-class _AnimatedButtonState extends State<AnimatedButton>
-    with SingleTickerProviderStateMixin {
+class _iOSButtonState extends State<iOSButton> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   bool _isPressed = false;
@@ -95,16 +102,12 @@ class _AnimatedButtonState extends State<AnimatedButton>
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -113,72 +116,63 @@ class _AnimatedButtonState extends State<AnimatedButton>
     super.dispose();
   }
 
-  void _onTapDown(TapDownDetails details) {
-    setState(() {
-      _isPressed = true;
-    });
-    _controller.forward();
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    setState(() {
-      _isPressed = false;
-    });
-    _controller.reverse();
-  }
-
-  void _onTapCancel() {
-    setState(() {
-      _isPressed = false;
-    });
-    _controller.reverse();
-  }
-
-  void _onTap() {
-    // Play sound (don't await it)
-    SoundManager.playButtonSound();
-
-    // Execute callback immediately
-    if (widget.onPressed != null) {
-      widget.onPressed!();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      onTap: _onTap,
+      onTapDown: (_) {
+        setState(() => _isPressed = true);
+        _controller.forward();
+      },
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        _controller.reverse();
+        SoundManager.playButtonSound();
+        widget.onPressed?.call();
+      },
+      onTapCancel: () {
+        setState(() => _isPressed = false);
+        _controller.reverse();
+      },
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              padding: widget.padding,
+              padding: widget.isCompact
+                  ? const EdgeInsets.symmetric(horizontal: 16, vertical: 10)
+                  : const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
-                color: widget.backgroundColor,
-                borderRadius: widget.borderRadius,
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.backgroundColor.withOpacity(0.3),
-                    blurRadius: _isPressed ? 4 : 8,
-                    offset: Offset(0, _isPressed ? 2 : 4),
+                color: widget.isPrimary ? AppColors.primary : AppColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(12),
+                border: widget.isPrimary ? null : Border.all(
+                  color: AppColors.divider,
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (widget.icon != null) ...[
+                    Icon(
+                      widget.icon,
+                      size: 16,
+                      color: widget.isPrimary ? Colors.black : AppColors.onSurface,
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(
+                    widget.text,
+                    style: TextStyle(
+                      fontSize: widget.isCompact ? 14 : 16,
+                      fontWeight: FontWeight.w600,
+                      color: widget.isPrimary ? Colors.black : AppColors.onSurface,
+                      letterSpacing: -0.3,
+                    ),
                   ),
                 ],
               ),
-              child: widget.textStyle != null
-                  ? Text(widget.text, style: widget.textStyle)
-                  : Text(
-                      widget.text,
-                      style: TextStyle(
-                        color: widget.textColor,
-                        fontWeight: widget.fontWeight,
-                        fontSize: widget.fontSize,
-                      ),
-                    ),
             ),
           );
         },
@@ -187,46 +181,71 @@ class _AnimatedButtonState extends State<AnimatedButton>
   }
 }
 
-// Large Animated Button for special buttons like Pavilion
-class LargeAnimatedButton extends StatefulWidget {
+// iOS Card Component
+class iOSCard extends StatelessWidget {
   final Widget child;
-  final VoidCallback? onPressed;
-  final Color backgroundColor;
-  final EdgeInsets padding;
-  final BorderRadius borderRadius;
+  final EdgeInsets? padding;
+  final VoidCallback? onTap;
 
-  const LargeAnimatedButton({
+  const iOSCard({
     super.key,
     required this.child,
-    this.onPressed,
-    this.backgroundColor = Colors.brown,
-    this.padding = const EdgeInsets.symmetric(horizontal: 60, vertical: 50),
-    this.borderRadius = const BorderRadius.all(Radius.circular(12)),
+    this.padding,
+    this.onTap,
   });
 
   @override
-  State<LargeAnimatedButton> createState() => _LargeAnimatedButtonState();
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: padding ?? const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.divider,
+            width: 0.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: child,
+      ),
+    );
+  }
 }
 
-class _LargeAnimatedButtonState extends State<LargeAnimatedButton>
+// Hero Pavilion Card
+class PavilionHeroCard extends StatefulWidget {
+  final VoidCallback? onTap;
+
+  const PavilionHeroCard({super.key, this.onTap});
+
+  @override
+  State<PavilionHeroCard> createState() => _PavilionHeroCardState();
+}
+
+class _PavilionHeroCardState extends State<PavilionHeroCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isPressed = false;
 
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 120),
+      duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.96,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -235,63 +254,76 @@ class _LargeAnimatedButtonState extends State<LargeAnimatedButton>
     super.dispose();
   }
 
-  void _onTapDown(TapDownDetails details) {
-    setState(() {
-      _isPressed = true;
-    });
-    _controller.forward();
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    setState(() {
-      _isPressed = false;
-    });
-    _controller.reverse();
-  }
-
-  void _onTapCancel() {
-    setState(() {
-      _isPressed = false;
-    });
-    _controller.reverse();
-  }
-
-  void _onTap() {
-    // Play sound
-    SoundManager.playButtonSound();
-
-    // Execute callback
-    if (widget.onPressed != null) {
-      widget.onPressed!();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      onTap: _onTap,
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        SoundManager.playButtonSound();
+        widget.onTap?.call();
+      },
+      onTapCancel: () => _controller.reverse(),
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              padding: widget.padding,
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: widget.backgroundColor,
-                borderRadius: widget.borderRadius,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: _isPressed ? 4 : 8,
-                    offset: Offset(0, _isPressed ? 2 : 4),
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
-              child: widget.child,
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        color: Colors.black.withOpacity(0.8),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "The Pavilion",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black.withOpacity(0.9),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Gain reward for every tap",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black.withOpacity(0.7),
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -301,22 +333,18 @@ class _LargeAnimatedButtonState extends State<LargeAnimatedButton>
 }
 
 class HomePage extends StatefulWidget {
-  HomePage({super.key, required this.userName});
-
   final String userName;
+
+  const HomePage({super.key, required this.userName});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  // Use MaterialColor so you can do textColor[900]
-  final MaterialColor textColor = Colors.brown;
-
   @override
   void initState() {
     super.initState();
-    // Initialize sound player
     SoundManager.initializePlayer();
   }
 
@@ -329,87 +357,109 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 60),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "${widget.userName}'s Dashboard",
-                    style: GoogleFonts.reemKufi(
-                      fontSize: 25,
-                      fontWeight: FontWeight.w900,
-                      color: textColor[900],
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Assalamu'alaikum",
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.onSurfaceVariant,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.userName,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onBackground,
+                              letterSpacing: -0.8,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  GestureDetector(
-                    child: Icon(
-                      Icons.account_circle_outlined,
-                      size: 50,
-                      color: textColor[700],
+                    GestureDetector(
+                      onTap: () async {
+                        await SoundManager.playAccountSound();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AccountsPage(userName: widget.userName),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceElevated,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.divider,
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.person_outline,
+                          size: 20,
+                          color: AppColors.accent,
+                        ),
+                      ),
                     ),
-                    onTap: () async{
-                      await SoundManager.playAccountSound();
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => AccountsPage(userName: widget.userName)));
-                    },
-                  ),
-                ],
-              ),
+                  ],
+                ),
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 32),
 
-              // Animated Buttons Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  AnimatedButton(
-                    text: "Custom Sets",
-                    backgroundColor: Colors.brown[100]!,
-                    textColor: textColor[900]!,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    borderRadius: BorderRadius.circular(12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
+                // Quick Actions
+                Row(
+                  children: [
+                    Expanded(
+                      child: iOSButton(
+                        text: "Custom Sets",
+                        icon: Icons.tune,
+                        isCompact: true,
+                        onPressed: () {
+                          print('Custom Sets tapped!');
+                        },
+                      ),
                     ),
-                    onPressed: () {
-                      print('Custom Sets tapped!');
-                      // Add your navigation or functionality here
-                    },
-                  ),
-                  AnimatedButton(
-                    text: "Tasbeeh Sets",
-                    backgroundColor: Colors.brown[100]!,
-                    textColor: textColor[900]!,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    borderRadius: BorderRadius.circular(12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: iOSButton(
+                        text: "Tasbeeh Sets",
+                        icon: Icons.auto_awesome,
+                        isCompact: true,
+                        onPressed: () {
+                          print('Tasbeeh Sets tapped!');
+                        },
+                      ),
                     ),
-                    onPressed: () {
+                  ],
+                ),
 
-                    },
-                  ),
-                ],
-              ),
+                const SizedBox(height: 24),
 
-              const SizedBox(height: 12),
-
-              // Animated Pavilion Button
-              Center(
-                child: LargeAnimatedButton(
-                  backgroundColor: Colors.brown[100]!,
-                  borderRadius: BorderRadius.circular(12),
-                  onPressed: () {
+                // Pavilion Hero
+                PavilionHeroCard(
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -417,59 +467,73 @@ class _HomePageState extends State<HomePage> {
                       ),
                     );
                   },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Stats Grid
+                Row(
+                  children: [
+                    Expanded(
+                      child: iOSCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "100 Day Challenge",
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.onSurface,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Center(child: CircularProgressWidget(),)
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: iOSCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Today",
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.onSurface,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            StatsTable(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // Prayer Times
+                iOSCard(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "The Pavilion",
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.reemKufi(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w900,
-                          color: textColor[900],
-                        ),
-                      ),
-                      Text(
-                        "Gain Reward For Every Tap",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          color: textColor[700],
-                        ),
-                      ),
+                      const SizedBox(height: 16),
+                      PrayerTimetable(),
                     ],
                   ),
                 ),
-              ),
 
-              SizedBox(height: 6),
-
-              // Progress + Stats Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Column(
-                    children: [
-                      Text(
-                        "100 Day Hard",
-                        style: GoogleFonts.reemKufi(
-                          fontSize: 25,
-                          fontWeight: FontWeight.w700,
-                          color: textColor[900],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      CircularProgressWidget(progress: 20),
-                    ],
-                  ),
-                  SizedBox(width: 10),
-                  StatsTable(),
-                ],
-              ),
-              SizedBox(height: 3),
-              PrayerTimetable(),
-            ],
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
