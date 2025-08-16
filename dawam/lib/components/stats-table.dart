@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:dawam/services/supabase_service.dart';
+import 'package:dawam/models/tasbeeh_models.dart';
 
 // iOS-inspired Color Scheme (matching your homepage)
 class AppColors {
@@ -13,13 +15,54 @@ class AppColors {
 }
 
 class StatsTable extends StatefulWidget {
-  const StatsTable({super.key});
+  final VoidCallback? onStatsUpdate; // Optional callback to refresh from parent
+
+  const StatsTable({super.key, this.onStatsUpdate});
 
   @override
   State<StatsTable> createState() => _StatsTableState();
 }
 
 class _StatsTableState extends State<StatsTable> {
+  UserStats? _userStats;
+  bool _isLoading = true;
+  final SupabaseService _supabaseService = SupabaseService();
+
+  @override
+  void initState() {
+    super.initState();
+    print('📊 StatsTable initState called');
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      print('📊 Loading stats...');
+      final stats = await _supabaseService.getTapStats();
+      print('📊 Stats loaded: Today: ${stats.todayTaps}, Week: ${stats.weeklyTaps}, Total: ${stats.totalTaps}');
+
+      if (mounted) {
+        setState(() {
+          _userStats = stats;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading stats: $e');
+      if (mounted) {
+        setState(() {
+          _userStats = UserStats(todayTaps: 0, weeklyTaps: 0, totalTaps: 0);
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshStats() async {
+    setState(() => _isLoading = true);
+    await _loadStats();
+  }
+
   void _showTodayStats() {
     showDialog(
       context: context,
@@ -98,12 +141,22 @@ class _StatsTableState extends State<StatsTable> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "234",
+                        _formatNumber(_userStats?.todayTaps ?? 0),
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
                           color: AppColors.accent,
                           letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        DateTime.now().toString().split(' ')[0],
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.onSurfaceVariant,
+                          letterSpacing: -0.1,
                         ),
                       ),
                     ],
@@ -195,12 +248,22 @@ class _StatsTableState extends State<StatsTable> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "1,247",
+                        _formatNumber(_userStats?.weeklyTaps ?? 0),
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
                           color: AppColors.accent,
                           letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        "This week (Mon - Sun)",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.onSurfaceVariant,
+                          letterSpacing: -0.1,
                         ),
                       ),
                     ],
@@ -292,12 +355,22 @@ class _StatsTableState extends State<StatsTable> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "12,534",
+                        _formatNumber(_userStats?.totalTaps ?? 0),
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
                           color: AppColors.accent,
                           letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        "Since you started using Dawam",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.onSurfaceVariant,
+                          letterSpacing: -0.1,
                         ),
                       ),
                     ],
@@ -309,6 +382,16 @@ class _StatsTableState extends State<StatsTable> {
         );
       },
     );
+  }
+
+  String _formatNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}K';
+    } else {
+      return number.toString();
+    }
   }
 
   @override
@@ -331,35 +414,110 @@ class _StatsTableState extends State<StatsTable> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14), // Reduced padding
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Text(
-              "Statistics",
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.onSurface,
-                letterSpacing: -0.3,
-              ),
+            // Header with refresh button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Statistics",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.onSurface,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                if (_isLoading)
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    ),
+                  )
+                else
+                  GestureDetector(
+                    onTap: _refreshStats,
+                    child: Icon(
+                      Icons.refresh,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 14),
 
             // Stats Rows
-            _buildStatRowWithButton("Today", "View", onTap: _showTodayStats),
-            const SizedBox(height: 10),
-            _buildStatRowWithButton("Week", "View", onTap: _showWeeklyStats),
-            const SizedBox(height: 10),
-            _buildStatRowWithButton("Total", "View", onTap: _showTotalStats),
+            if (_isLoading)
+              Column(
+                children: [
+                  _buildLoadingRow(),
+                  const SizedBox(height: 10),
+                  _buildLoadingRow(),
+                  const SizedBox(height: 10),
+                  _buildLoadingRow(),
+                ],
+              )
+            else ...[
+              _buildStatRowWithButton(
+                  "Today",
+                  _formatNumber(_userStats?.todayTaps ?? 0),
+                  onTap: _showTodayStats
+              ),
+              const SizedBox(height: 10),
+              _buildStatRowWithButton(
+                  "Week",
+                  _formatNumber(_userStats?.weeklyTaps ?? 0),
+                  onTap: _showWeeklyStats
+              ),
+              const SizedBox(height: 10),
+              _buildStatRowWithButton(
+                  "Total",
+                  _formatNumber(_userStats?.totalTaps ?? 0),
+                  onTap: _showTotalStats
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatRowWithButton(String label, String buttonText, {required VoidCallback onTap}) {
+  Widget _buildLoadingRow() {
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Container(
+            height: 12,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          flex: 2,
+          child: Container(
+            height: 20,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatRowWithButton(String label, String value, {required VoidCallback onTap}) {
     return Row(
       children: [
         Expanded(
@@ -391,7 +549,7 @@ class _StatsTableState extends State<StatsTable> {
                 ),
               ),
               child: Text(
-                buttonText,
+                value,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,

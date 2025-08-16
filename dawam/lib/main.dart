@@ -1,13 +1,20 @@
+// Replace your main.dart with this corrected version:
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dawam/theme/app-theme.dart';
 import 'package:dawam/providers/theme-providers.dart';
+import 'package:dawam/services/supabase_service.dart';
 import 'package:dawam/pages/welcome-page.dart';
 import 'package:dawam/pages/homepage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase
+  await SupabaseService().initialize();
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
@@ -36,7 +43,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Add this SplashScreen class to your main.dart
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -52,31 +58,93 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkOnboardingStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasCompletedOnboarding = prefs.getBool('has_completed_onboarding') ?? false;
-    final userName = prefs.getString('user_name');
+    try {
+      // Check if user is authenticated with Supabase
+      final supabaseService = SupabaseService();
 
-    // Add a brief delay for splash effect
-    await Future.delayed(const Duration(milliseconds: 1500));
+      if (supabaseService.isAuthenticated) {
+        // Get user data from Supabase
+        final userData = await supabaseService.getUserData();
 
-    if (!mounted) return;
+        if (userData != null && userData['name'] != null) {
+          // User exists in database, go to homepage
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomePage(userName: userData['name']),
+              ),
+            );
+          }
+          return;
+        }
+      }
 
-    if (hasCompletedOnboarding && userName != null) {
-      // User has completed onboarding, go directly to homepage
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomePage(userName: userName),
-        ),
-      );
-    } else {
-      // First time user, show onboarding
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const WelcomePage(),
-        ),
-      );
+      // Check local storage for fallback
+      final prefs = await SharedPreferences.getInstance();
+      final hasCompletedOnboarding = prefs.getBool('has_completed_onboarding') ?? false;
+      final userName = prefs.getString('user_name');
+
+      // Add delay for splash effect
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      if (!mounted) return;
+
+      if (hasCompletedOnboarding && userName != null) {
+        // Try to restore user in Supabase
+        final userId = await supabaseService.createOrGetUser(userName);
+        if (userId != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePage(userName: userName),
+            ),
+          );
+        } else {
+          // Failed to restore, show onboarding
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const WelcomePage(),
+            ),
+          );
+        }
+      } else {
+        // First time user, show onboarding
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const WelcomePage(),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error in splash screen: $e');
+
+      // Fallback to local check if Supabase fails
+      final prefs = await SharedPreferences.getInstance();
+      final hasCompletedOnboarding = prefs.getBool('has_completed_onboarding') ?? false;
+      final userName = prefs.getString('user_name');
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      if (!mounted) return;
+
+      if (hasCompletedOnboarding && userName != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomePage(userName: userName),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const WelcomePage(),
+          ),
+        );
+      }
     }
   }
 

@@ -1,5 +1,7 @@
 import 'package:dawam/components/prayer-timetable.dart';
 import 'package:dawam/pages/pavilion.dart';
+import 'package:dawam/pages/prayer-times.dart';
+import 'package:dawam/pages/tasbeeh-sets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -448,7 +450,12 @@ class _HomePageState extends State<HomePage> {
                         icon: Icons.auto_awesome,
                         isCompact: true,
                         onPressed: () {
-                          print('Tasbeeh Sets tapped!');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TasbeehSetsPage(),
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -522,11 +529,64 @@ class _HomePageState extends State<HomePage> {
 
                 // Prayer Times
                 iOSCard(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PrayerTimes(),
+                      ),
+                    );
+                  },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 16),
-                      PrayerTimetable(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: AppColors.accentLight,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.schedule,
+                                  size: 20,
+                                  color: AppColors.accent,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                "Prayer Times",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.onSurface,
+                                  letterSpacing: -0.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 20,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        "View today's prayer schedule",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.onSurfaceVariant,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
                     ],
                   ),
                 ),

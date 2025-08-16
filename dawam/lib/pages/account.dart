@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dawam/services/supabase_service.dart';
+import 'package:dawam/pages/welcome-page.dart';
+import 'package:dawam/pages/homepage.dart';
 
 // iOS-inspired Color Scheme (matching your app)
 class AppColors {
@@ -54,6 +57,92 @@ class _AccountsPageState extends State<AccountsPage> {
     await prefs.setBool(key, value);
   }
 
+  void _showChangeNameDialog() {
+    final nameController = TextEditingController(text: widget.userName);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            "Change Name",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurface,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Enter your new name:",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.divider),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                  hintText: "Your name",
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.onSurface,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                "Cancel",
+                style: TextStyle(color: AppColors.onSurfaceVariant),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                String newName = nameController.text.trim();
+                if (newName.isNotEmpty && newName != widget.userName) {
+                  Navigator.of(context).pop();
+                  await _updateUserName(newName);
+                } else if (newName.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Please enter a valid name")),
+                  );
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Text(
+                "Update",
+                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showResetDialog() {
     showDialog(
       context: context,
@@ -70,7 +159,7 @@ class _AccountsPageState extends State<AccountsPage> {
             ),
           ),
           content: Text(
-            "This will reset your progress, settings, and return you to the welcome screen. This action cannot be undone.",
+            "This will reset your progress, settings, and return you to the welcome screen where you'll need to set up your account again. This action cannot be undone.",
             style: TextStyle(
               fontSize: 14,
               color: AppColors.onSurfaceVariant,
@@ -100,12 +189,141 @@ class _AccountsPageState extends State<AccountsPage> {
     );
   }
 
-  Future<void> _resetAllData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+  Future<void> _updateUserName(String newName) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+        ),
+      );
 
-    if (mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+      // Update name in Supabase
+      final supabaseService = SupabaseService();
+      await supabaseService.updateUserName(newName);
+
+      // Update name in local storage
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_name', newName);
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Name updated to $newName"),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+
+        // Navigate back to homepage with new name
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => HomePage(userName: newName),
+          ),
+              (route) => route.isFirst,
+        );
+      }
+    } catch (e) {
+      print('Error updating name: $e');
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+
+        // Try to update locally even if Supabase fails
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user_name', newName);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Name updated to $newName (saved locally)"),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          );
+
+          // Navigate back to homepage with new name
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => HomePage(userName: newName),
+            ),
+                (route) => route.isFirst,
+          );
+        } catch (localError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Failed to update name. Please try again."),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _resetAllData() async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+        ),
+      );
+
+      // Sign out from Supabase
+      final supabaseService = SupabaseService();
+      await supabaseService.signOut();
+
+      // Clear all SharedPreferences data
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+
+        // Navigate to WelcomePage and remove all previous routes
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => const WelcomePage(),
+          ),
+              (route) => false,
+        );
+      }
+    } catch (e) {
+      print('Error during reset: $e');
+
+      // Even if Supabase fails, still clear local data
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      if (mounted) {
+        // Close loading dialog if it's still open
+        Navigator.of(context).pop();
+
+        // Navigate to WelcomePage
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => const WelcomePage(),
+          ),
+              (route) => false,
+        );
+      }
     }
   }
 
@@ -160,71 +378,79 @@ class _AccountsPageState extends State<AccountsPage> {
                 const SizedBox(height: 32),
 
                 // Profile Section
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.divider,
-                      width: 0.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadow,
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                GestureDetector(
+                  onTap: _showChangeNameDialog,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.divider,
+                        width: 0.5,
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(
-                            color: AppColors.primary.withOpacity(0.3),
-                            width: 1,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.shadow,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.person,
+                            size: 30,
+                            color: AppColors.accent,
                           ),
                         ),
-                        child: Icon(
-                          Icons.person,
-                          size: 30,
-                          color: AppColors.accent,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.userName,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onSurface,
-                                letterSpacing: -0.4,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.userName,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onSurface,
+                                  letterSpacing: -0.4,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Dawam User",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.onSurfaceVariant,
-                                letterSpacing: -0.2,
+                              const SizedBox(height: 4),
+                              Text(
+                                "Tap to change name",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.onSurfaceVariant,
+                                  letterSpacing: -0.2,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        Icon(
+                          Icons.edit,
+                          size: 20,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 

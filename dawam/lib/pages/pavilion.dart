@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
+import 'package:dawam/services/supabase_service.dart';
+import 'package:dawam/models/tasbeeh_models.dart';
 
 // iOS-inspired Color Scheme
 class AppColors {
@@ -300,14 +302,16 @@ class ThePavilion extends StatefulWidget {
 }
 
 class _ThePavilionState extends State<ThePavilion> {
-  int _tapCount = 0;
-  int _streakDays = 7;
-  int _totalTaps = 1247;
+  UserStats? _userStats;
+  int _streakDays = 7; // TODO: Calculate from database
+  bool _isLoading = true;
+  final SupabaseService _supabaseService = SupabaseService();
 
   @override
   void initState() {
     super.initState();
     SoundManager.initializePlayer();
+    _loadStats();
   }
 
   @override
@@ -316,11 +320,74 @@ class _ThePavilionState extends State<ThePavilion> {
     super.dispose();
   }
 
-  void _incrementTap() {
-    setState(() {
-      _tapCount++;
-      _totalTaps++;
-    });
+  Future<void> _loadStats() async {
+    try {
+      print('🏛️ Loading Pavilion stats...');
+      final stats = await _supabaseService.getTapStats();
+      print('🏛️ Stats loaded: Today: ${stats.todayTaps}, Total: ${stats.totalTaps}');
+
+      if (mounted) {
+        setState(() {
+          _userStats = stats;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading Pavilion stats: $e');
+      if (mounted) {
+        setState(() {
+          _userStats = UserStats(todayTaps: 0, weeklyTaps: 0, totalTaps: 0);
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _incrementTap() async {
+    try {
+      // Record tap in database
+      print('🏛️ Recording tap...');
+      final success = await _supabaseService.recordTap(type: 'pavilion');
+
+      if (success) {
+        print('🏛️ Tap recorded successfully');
+        // Refresh stats to show updated count
+        await _loadStats();
+      } else {
+        print('❌ Failed to record tap');
+        // Show error to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to record tap. Please try again.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ Error recording tap: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Network error. Tap not recorded.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  String _formatNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}K';
+    } else {
+      return number.toString();
+    }
   }
 
   @override
@@ -393,25 +460,62 @@ class _ThePavilionState extends State<ThePavilion> {
                 const SizedBox(height: 32),
 
                 // Stats grid
-                Row(
-                  children: [
-                    Expanded(
-                      child: StatsCard(
-                        title: "Current Streak",
-                        value: "$_streakDays days",
-                        icon: Icons.local_fire_department_rounded,
+                if (_isLoading)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppColors.divider.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: StatsCard(
-                        title: "Total Taps",
-                        value: _totalTaps.toString(),
-                        icon: Icons.touch_app_rounded,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppColors.divider.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatsCard(
+                          title: "Current Streak",
+                          value: "$_streakDays days",
+                          icon: Icons.local_fire_department_rounded,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: StatsCard(
+                          title: "Total Taps",
+                          value: _formatNumber(_userStats?.totalTaps ?? 0),
+                          icon: Icons.touch_app_rounded,
+                        ),
+                      ),
+                    ],
+                  ),
 
                 const SizedBox(height: 24),
 
@@ -468,7 +572,7 @@ class _ThePavilionState extends State<ThePavilion> {
 
                 // Main tap zone (moved to bottom for better ergonomics)
                 TapZone(
-                  tapCount: _tapCount,
+                  tapCount: _userStats?.todayTaps ?? 0,
                   onTap: _incrementTap,
                 ),
 

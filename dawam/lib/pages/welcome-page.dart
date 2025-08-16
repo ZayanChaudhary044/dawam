@@ -4,7 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dawam/pages/homepage.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Add this import
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dawam/services/supabase_service.dart'; // Add this import
 
 void fadeTo(BuildContext context, Widget page) {
   Navigator.of(context).push(
@@ -416,7 +417,6 @@ class _WelcomeNameState extends State<WelcomeName> {
 
                 if (enteredName.isEmpty) {
                   print('Name is empty');
-                  // Optionally show a snackbar or dialog to inform user
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Please enter your name'),
@@ -426,7 +426,6 @@ class _WelcomeNameState extends State<WelcomeName> {
                   return;
                 }
 
-                // Navigate to the next page with the entered name
                 print('Navigating to WelcomeMessage with name: $enteredName');
                 fadeTo(context, WelcomeMessage(userName: enteredName));
               },
@@ -438,18 +437,47 @@ class _WelcomeNameState extends State<WelcomeName> {
   }
 }
 
-/// WelcomeMessage screen - UPDATED to save onboarding completion
+/// WelcomeMessage screen - UPDATED with Supabase Integration
 class WelcomeMessage extends StatelessWidget {
   final String userName;
 
   const WelcomeMessage({super.key, required this.userName});
 
-  // Method to save onboarding completion
-  Future<void> _completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('has_completed_onboarding', true);
-    await prefs.setString('user_name', userName);
-    print('✅ Onboarding completed and saved for user: $userName');
+  // Method to save user to Supabase and complete onboarding
+  Future<void> _completeOnboarding(BuildContext context) async {
+    try {
+      // Create user in Supabase
+      final supabaseService = SupabaseService();
+      final userId = await supabaseService.createOrGetUser(userName);
+
+      if (userId != null) {
+        // Also save to local storage as backup
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('has_completed_onboarding', true);
+        await prefs.setString('user_name', userName);
+
+        print('✅ User created in Supabase with ID: $userId');
+      } else {
+        throw Exception('Failed to create user in Supabase');
+      }
+    } catch (e) {
+      print('❌ Error completing onboarding: $e');
+
+      // Fallback to local storage only
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_completed_onboarding', true);
+      await prefs.setString('user_name', userName);
+
+      // Show error message to user
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Network error - data saved locally'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -492,16 +520,32 @@ class WelcomeMessage extends StatelessWidget {
               onPressed: () async {
                 print('🚀 Get Started button pressed');
 
-                // Save onboarding completion BEFORE navigating
-                await _completeOnboarding();
-
-                // Navigate to homepage using pushReplacement to prevent going back
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HomePage(userName: userName),
+                // Show loading state
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+                    ),
                   ),
                 );
+
+                // Save to Supabase and complete onboarding
+                await _completeOnboarding(context);
+
+                // Close loading dialog
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+
+                  // Navigate to homepage
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HomePage(userName: userName),
+                    ),
+                  );
+                }
               },
             ),
             const SizedBox(height: 20),
@@ -518,6 +562,10 @@ class OnboardingManager {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('has_completed_onboarding');
     await prefs.remove('user_name');
+
+    // Also sign out from Supabase
+    await SupabaseService().signOut();
+
     print('🔄 Onboarding reset - user will see welcome flow again');
   }
 
