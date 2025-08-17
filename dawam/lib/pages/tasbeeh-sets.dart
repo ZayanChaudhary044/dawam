@@ -186,7 +186,7 @@ class _TasbeehSetsPageState extends State<TasbeehSetsPage> {
                             ),
                           ),
                           Text(
-                            "Pre-Made",
+                            "Pre-Made Sets For Your Daily Dhikr",
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,

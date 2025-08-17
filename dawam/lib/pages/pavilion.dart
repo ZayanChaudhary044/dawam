@@ -69,22 +69,28 @@ class SoundManager {
   }
 }
 
-// Modern Tap Zone Widget
-class TapZone extends StatefulWidget {
-  final int tapCount;
+// Enhanced Tap Zone with Tasbeeh Integration
+class TasbeehTapZone extends StatefulWidget {
+  final TasbeehSet? selectedSet;
+  final int remainingCount;
+  final int todayTaps;
   final VoidCallback onTap;
+  final VoidCallback onSelectSet;
 
-  const TapZone({
+  const TasbeehTapZone({
     super.key,
-    required this.tapCount,
+    this.selectedSet,
+    required this.remainingCount,
+    required this.todayTaps,
     required this.onTap,
+    required this.onSelectSet,
   });
 
   @override
-  State<TapZone> createState() => _TapZoneState();
+  State<TasbeehTapZone> createState() => _TasbeehTapZoneState();
 }
 
-class _TapZoneState extends State<TapZone>
+class _TasbeehTapZoneState extends State<TasbeehTapZone>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -136,8 +142,11 @@ class _TapZoneState extends State<TapZone>
 
   @override
   Widget build(BuildContext context) {
+    final hasSelectedSet = widget.selectedSet != null;
+    final isCompleted = hasSelectedSet && widget.remainingCount <= 0;
+
     return GestureDetector(
-      onTap: _handleTap,
+      onTap: hasSelectedSet && !isCompleted ? _handleTap : widget.onSelectSet,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
@@ -145,24 +154,33 @@ class _TapZoneState extends State<TapZone>
             scale: _scaleAnimation.value,
             child: Container(
               width: double.infinity,
-              height: 320,
+              height: 380,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
+                  colors: hasSelectedSet
+                      ? [
+                    widget.selectedSet!.accentColor.withOpacity(0.8),
+                    widget.selectedSet!.accentColor.withOpacity(0.6),
+                  ]
+                      : [
                     AppColors.primary,
                     AppColors.primary.withOpacity(0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: hasSelectedSet
+                      ? widget.selectedSet!.accentColor.withOpacity(0.3)
+                      : AppColors.primary.withOpacity(0.3),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.25),
+                    color: hasSelectedSet
+                        ? widget.selectedSet!.accentColor.withOpacity(0.25)
+                        : AppColors.primary.withOpacity(0.25),
                     blurRadius: _isPressed ? 15 : 25,
                     offset: Offset(0, _isPressed ? 4 : 8),
                   ),
@@ -173,52 +191,377 @@ class _TapZoneState extends State<TapZone>
                   ),
                 ],
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Tap icon with pulse effect
-                  Transform.scale(
-                    scale: _pulseAnimation.value,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(40),
-                      ),
-                      child: Icon(
-                        Icons.touch_app_rounded,
-                        size: 40,
-                        color: Colors.black.withOpacity(0.7),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Tap count
-                  Text(
-                    widget.tapCount.toString(),
-                    style: TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black.withOpacity(0.9),
-                      letterSpacing: -1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Taps Today",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black.withOpacity(0.7),
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                ],
-              ),
+              child: hasSelectedSet
+                  ? _buildTasbeehContent(isCompleted)
+                  : _buildDefaultContent(),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildTasbeehContent(bool isCompleted) {
+    if (isCompleted) {
+      return _buildCompletionContent();
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Arabic text
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            widget.selectedSet!.arabicText,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+            textDirection: TextDirection.rtl,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Transliteration
+        Text(
+          widget.selectedSet!.transliteration,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withOpacity(0.9),
+            letterSpacing: -0.3,
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
+        ),
+
+        const SizedBox(height: 16),
+
+        // Remaining count
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            "${widget.remainingCount} remaining",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Progress indicator
+        Container(
+          width: 200,
+          height: 6,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: (widget.selectedSet!.recommendedCount - widget.remainingCount) /
+                widget.selectedSet!.recommendedCount,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompletionContent() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Completion icon
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(40),
+          ),
+          child: Icon(
+            Icons.check_circle,
+            size: 50,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        Text(
+          "Dhikr Complete!",
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        Text(
+          "May Allah accept your dhikr",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.white.withOpacity(0.9),
+            letterSpacing: -0.2,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Select new set button
+        GestureDetector(
+          onTap: widget.onSelectSet,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              "Select New Dhikr",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDefaultContent() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Select dhikr icon
+        Transform.scale(
+          scale: _pulseAnimation.value,
+          child: Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(40),
+            ),
+            child: Icon(
+              Icons.auto_awesome,
+              size: 40,
+              color: Colors.black.withOpacity(0.7),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        Text(
+          "Select Dhikr",
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: Colors.black.withOpacity(0.9),
+            letterSpacing: -1.0,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        Text(
+          "Choose a Tasbeeh set to begin",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black.withOpacity(0.7),
+            letterSpacing: -0.3,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        Text(
+          "Today: ${widget.todayTaps} taps",
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black.withOpacity(0.6),
+            letterSpacing: -0.2,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Tasbeeh Set Selection Modal
+class TasbeehSetSelector extends StatelessWidget {
+  final List<TasbeehSet> tasbeehSets;
+  final Function(TasbeehSet) onSelectSet;
+
+  const TasbeehSetSelector({
+    super.key,
+    required this.tasbeehSets,
+    required this.onSelectSet,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // Handle bar
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Select Dhikr",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onBackground,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Icon(
+                    Icons.close,
+                    size: 24,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Tasbeeh sets list
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: tasbeehSets.length,
+              itemBuilder: (context, index) {
+                final set = tasbeehSets[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      onSelectSet(set);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.divider,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: set.accentColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  set.transliteration,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.onSurface,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  set.translation,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.onSurfaceVariant,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: set.accentColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "${set.recommendedCount}x",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: set.accentColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -303,7 +646,10 @@ class ThePavilion extends StatefulWidget {
 
 class _ThePavilionState extends State<ThePavilion> {
   UserStats? _userStats;
-  int _streakDays = 7; // TODO: Calculate from database
+  List<TasbeehSet> _tasbeehSets = [];
+  TasbeehSet? _selectedSet;
+  int _remainingCount = 0;
+  int _streakDays = 7;
   bool _isLoading = true;
   final SupabaseService _supabaseService = SupabaseService();
 
@@ -311,7 +657,7 @@ class _ThePavilionState extends State<ThePavilion> {
   void initState() {
     super.initState();
     SoundManager.initializePlayer();
-    _loadStats();
+    _loadData();
   }
 
   @override
@@ -320,23 +666,34 @@ class _ThePavilionState extends State<ThePavilion> {
     super.dispose();
   }
 
-  Future<void> _loadStats() async {
+  Future<void> _loadData() async {
     try {
-      print('🏛️ Loading Pavilion stats...');
-      final stats = await _supabaseService.getTapStats();
-      print('🏛️ Stats loaded: Today: ${stats.todayTaps}, Total: ${stats.totalTaps}');
+      print('🏛️ Loading Pavilion data...');
+
+      // Load stats and tasbeeh sets in parallel
+      final results = await Future.wait([
+        _supabaseService.getTapStats(),
+        _supabaseService.getTasbeehSets(),
+      ]);
+
+      final stats = results[0] as UserStats;
+      final sets = results[1] as List<TasbeehSet>;
+
+      print('🏛️ Data loaded: Stats: ${stats.todayTaps}, Sets: ${sets.length}');
 
       if (mounted) {
         setState(() {
           _userStats = stats;
+          _tasbeehSets = sets;
           _isLoading = false;
         });
       }
     } catch (e) {
-      print('❌ Error loading Pavilion stats: $e');
+      print('❌ Error loading Pavilion data: $e');
       if (mounted) {
         setState(() {
           _userStats = UserStats(todayTaps: 0, weeklyTaps: 0, totalTaps: 0);
+          _tasbeehSets = [];
           _isLoading = false;
         });
       }
@@ -344,22 +701,38 @@ class _ThePavilionState extends State<ThePavilion> {
   }
 
   Future<void> _incrementTap() async {
+    if (_selectedSet == null || _remainingCount <= 0) return;
+
     try {
       // Record tap in database
-      print('🏛️ Recording tap...');
-      final success = await _supabaseService.recordTap(type: 'pavilion');
+      print('🏛️ Recording dhikr tap...');
+      final success = await _supabaseService.recordTap(type: 'tasbeeh');
 
       if (success) {
-        print('🏛️ Tap recorded successfully');
+        print('🏛️ Dhikr tap recorded successfully');
+
+        // Decrement remaining count
+        setState(() {
+          _remainingCount--;
+        });
+
         // Refresh stats to show updated count
-        await _loadStats();
+        final stats = await _supabaseService.getTapStats();
+        setState(() {
+          _userStats = stats;
+        });
+
+        // Show completion celebration if finished
+        if (_remainingCount <= 0) {
+          _showCompletionCelebration();
+        }
+
       } else {
-        print('❌ Failed to record tap');
-        // Show error to user
+        print('❌ Failed to record dhikr tap');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Failed to record tap. Please try again.'),
+              content: Text('Failed to record dhikr. Please try again.'),
               backgroundColor: Colors.red,
               duration: Duration(seconds: 2),
             ),
@@ -367,17 +740,39 @@ class _ThePavilionState extends State<ThePavilion> {
         }
       }
     } catch (e) {
-      print('❌ Error recording tap: $e');
+      print('❌ Error recording dhikr tap: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Network error. Tap not recorded.'),
+            content: Text('Network error. Dhikr not recorded.'),
             backgroundColor: Colors.orange,
             duration: Duration(seconds: 2),
           ),
         );
       }
     }
+  }
+
+  void _showCompletionCelebration() {
+    HapticFeedback.heavyImpact();
+    // You could add confetti animation or other celebration effects here
+  }
+
+  void _selectTasbeehSet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TasbeehSetSelector(
+        tasbeehSets: _tasbeehSets,
+        onSelectSet: (set) {
+          setState(() {
+            _selectedSet = set;
+            _remainingCount = set.recommendedCount;
+          });
+        },
+      ),
+    );
   }
 
   String _formatNumber(int number) {
@@ -443,7 +838,9 @@ class _ThePavilionState extends State<ThePavilion> {
                             ),
                           ),
                           Text(
-                            "Tap to earn rewards",
+                            _selectedSet != null
+                                ? "Dhikr in progress..."
+                                : "Select dhikr to begin",
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -454,10 +851,71 @@ class _ThePavilionState extends State<ThePavilion> {
                         ],
                       ),
                     ),
+                    if (_selectedSet != null)
+                      GestureDetector(
+                        onTap: _selectTasbeehSet,
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: _selectedSet!.accentColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _selectedSet!.accentColor.withOpacity(0.3),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.swap_horiz,
+                            size: 18,
+                            color: _selectedSet!.accentColor,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
 
                 const SizedBox(height: 32),
+
+                // Selected dhikr info (if any)
+                if (_selectedSet != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _selectedSet!.accentColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _selectedSet!.accentColor.withOpacity(0.3),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          _selectedSet!.transliteration,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: _selectedSet!.accentColor,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _selectedSet!.translation,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.onSurface,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
 
                 // Stats grid
                 if (_isLoading)
@@ -509,9 +967,9 @@ class _ThePavilionState extends State<ThePavilion> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: StatsCard(
-                          title: "Total Taps",
+                          title: "Total Dhikr",
                           value: _formatNumber(_userStats?.totalTaps ?? 0),
-                          icon: Icons.touch_app_rounded,
+                          icon: Icons.auto_awesome,
                         ),
                       ),
                     ],
@@ -543,7 +1001,7 @@ class _ThePavilionState extends State<ThePavilion> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            "Daily Reminder",
+                            "Dhikr Reminder",
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -555,7 +1013,9 @@ class _ThePavilionState extends State<ThePavilion> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        "Every tap is a step closer to Allah. Keep your dhikr consistent and watch your spiritual journey flourish.",
+                        _selectedSet != null
+                            ? "Focus on your dhikr and let each recitation draw you closer to Allah. Every count is a step towards spiritual fulfillment."
+                            : "Select a dhikr set to begin your spiritual journey. Remember Allah through beautiful supplications and earn countless rewards.",
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -570,10 +1030,13 @@ class _ThePavilionState extends State<ThePavilion> {
 
                 const SizedBox(height: 32),
 
-                // Main tap zone (moved to bottom for better ergonomics)
-                TapZone(
-                  tapCount: _userStats?.todayTaps ?? 0,
+                // Main Tasbeeh tap zone
+                TasbeehTapZone(
+                  selectedSet: _selectedSet,
+                  remainingCount: _remainingCount,
+                  todayTaps: _userStats?.todayTaps ?? 0,
                   onTap: _incrementTap,
+                  onSelectSet: _selectTasbeehSet,
                 ),
 
                 const SizedBox(height: 20),
