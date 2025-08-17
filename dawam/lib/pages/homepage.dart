@@ -1,4 +1,5 @@
 import 'package:dawam/components/prayer-timetable.dart';
+import 'package:dawam/pages/custom-sets.dart';
 import 'package:dawam/pages/pavilion.dart';
 import 'package:dawam/pages/prayer-times.dart';
 import 'package:dawam/pages/tasbeeh-sets.dart';
@@ -439,7 +440,12 @@ class _HomePageState extends State<HomePage> {
                         icon: Icons.tune,
                         isCompact: true,
                         onPressed: () {
-                          print('Custom Sets tapped!');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CustomSetsPage(),
+                            ),
+                          );
                         },
                       ),
                     ),
